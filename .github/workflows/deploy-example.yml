@@ -1,0 +1,37 @@
+name: deploy-example
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'django_test_app/**'
+      - 'dmr/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'django_test_app/Dockerfile'
+      - 'django_test_app/fly.toml'
+      - '.github/workflows/deploy-example.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - uses: superfly/flyctl-actions/setup-flyctl@master
+
+    - run: flyctl deploy --remote-only --config django_test_app/fly.toml --build-context .
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
