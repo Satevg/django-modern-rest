@@ -9,5 +9,10 @@ router = Router(
             views.UserController.as_view(),
             name='user',
         ),
+        path(
+            'user/cursor/',
+            views.UserCursorController.as_view(),
+            name='user-cursor',
+        ),
     ],
 )

@@ -4,9 +4,15 @@ import attrs
 from django.core.paginator import EmptyPage, Paginator
 from django.db.models import QuerySet
 
-from dmr.pagination import Page, Paginated
+from dmr.pagination import (
+    CursorPaginated,
+    CursorPaginator,
+    Page,
+    Paginated,
+)
 from server.apps.model_fk.models import Role, Tag, User
 from server.apps.model_fk.serializers import (
+    CursorPageQuery,
     PageQuery,
     RoleSchema,
     TagSchema,
@@ -68,4 +74,33 @@ class UserMap:
                 number=parsed_query.page,
                 object_list=object_list,
             ),
+        )
+
+    def multiple_cursor(
+        self,
+        users: QuerySet[User],
+        parsed_query: CursorPageQuery,
+    ) -> CursorPaginated[UserSchema]:
+        per_page = parsed_query.first or parsed_query.last or 10
+        paginator = CursorPaginator(
+            users,
+            per_page=per_page,
+            ordering=('-created_at', 'id'),
+        )
+        page = paginator.page(
+            first=parsed_query.first,
+            last=parsed_query.last,
+            after=parsed_query.after,
+            before=parsed_query.before,
+        )
+        return CursorPaginated(
+            per_page=page.per_page,
+            has_next=page.has_next,
+            has_previous=page.has_previous,
+            next_cursor=page.next_cursor,
+            previous_cursor=page.previous_cursor,
+            object_list=[
+                self.single(user)
+                for user in page.object_list
+            ],
         )

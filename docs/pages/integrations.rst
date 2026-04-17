@@ -98,12 +98,28 @@ your own metadata / models and use them with our framework.
 Cursor pagination
 ~~~~~~~~~~~~~~~~~
 
-We also support any other pagination library.
+For large datasets where ``COUNT(*)`` is expensive, ``django-modern-rest``
+ships :class:`~dmr.pagination.CursorPaginator` — a keyset paginator
+built on top of :class:`django.core.paginator.Paginator`. It walks the
+queryset via opaque cursor strings instead of page numbers, so each
+page fetch is a single ``WHERE ... ORDER BY ... LIMIT`` query with no
+total count.
 
-Like `django-cursor-pagination <https://github.com/photocrowd/django-cursor-pagination>`_
-or even your custom implementation.
+.. literalinclude:: /examples/integrations/cursor_pagination.py
+  :caption: views.py
+  :language: python
+  :linenos:
 
-Any Django-compatible tool should work out of the box.
+.. note::
+
+    Provide a stable ``ordering`` that ends in a unique tie-breaker
+    (typically the primary key), for example ``('-created_at', 'id')``.
+    Ordering fields are assumed to be ``NOT NULL``; pages containing
+    ``NULL`` values are not guaranteed to be consistent.
+
+If you prefer an external tool — for example
+`django-cursor-pagination <https://github.com/photocrowd/django-cursor-pagination>`_
+— it will also work, no special integration is required.
 
 Interface
 ~~~~~~~~~
@@ -113,6 +129,14 @@ Interface
 
 .. autoclass:: dmr.pagination.Page
   :members:
+
+.. autoclass:: dmr.pagination.CursorPaginated
+  :members:
+
+.. autoclass:: dmr.pagination.CursorPaginator
+  :members: page, apage, cursor
+
+.. autoexception:: dmr.pagination.InvalidCursorError
 
 
 Filters

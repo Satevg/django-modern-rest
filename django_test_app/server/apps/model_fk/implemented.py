@@ -9,6 +9,7 @@ from server.apps.model_fk.services import (
     TagsCreate,
     UserCreate,
     UserList,
+    UserListCursor,
 )
 
 _ItemT = TypeVar('_ItemT')
@@ -35,5 +36,6 @@ class HasContainer:
         container.register(RoleCreate)
         container.register(UserCreate)
         container.register(UserList)
+        container.register(UserListCursor)
 
         return container

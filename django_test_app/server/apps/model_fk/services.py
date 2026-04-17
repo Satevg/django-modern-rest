@@ -4,10 +4,11 @@ from typing import final
 import attrs
 from django.db import IntegrityError, transaction
 
-from dmr.pagination import Paginated
+from dmr.pagination import CursorPaginated, Paginated
 from server.apps.model_fk.mappers import UserMap
 from server.apps.model_fk.models import Role, Tag, User
 from server.apps.model_fk.serializers import (
+    CursorPageQuery,
     PageQuery,
     RoleSchema,
     TagSchema,
@@ -92,6 +93,27 @@ class UserList:
                 .prefetch_related('tags')
                 .order_by('id')
                 .all()  # it is still lazy
+            ),
+            parsed_query,
+        )
+
+
+@final
+@attrs.define(frozen=True)
+class UserListCursor:
+    _mapper: UserMap
+
+    def __call__(
+        self,
+        parsed_query: CursorPageQuery,
+    ) -> CursorPaginated[UserSchema]:
+        """Return users via cursor pagination."""
+        return self._mapper.multiple_cursor(
+            (
+                User.objects
+                .select_related('role')
+                .prefetch_related('tags')
+                .all()
             ),
             parsed_query,
         )

@@ -8,10 +8,11 @@ from dmr import Body, Controller, Query, modify
 from dmr.endpoint import Endpoint
 from dmr.errors import ErrorType
 from dmr.metadata import ResponseSpec
-from dmr.pagination import Paginated
+from dmr.pagination import CursorPaginated, InvalidCursorError, Paginated
 from dmr.plugins.pydantic import PydanticSerializer
 from server.apps.model_fk.implemented import HasContainer
 from server.apps.model_fk.serializers import (
+    CursorPageQuery,
     PageQuery,
     UserCreateSchema,
     UserSchema,
@@ -20,6 +21,7 @@ from server.apps.model_fk.services import (
     UniqueConstraintError,
     UserCreate,
     UserList,
+    UserListCursor,
 )
 
 
@@ -58,6 +60,41 @@ class UserController(HasContainer, Controller[PydanticSerializer]):
                 status_code=HTTPStatus.CONFLICT,
             )
         # Handle default errors:
+        return super().handle_error(endpoint, controller, exc)
+
+
+@final
+class UserCursorController(HasContainer, Controller[PydanticSerializer]):
+    @modify(
+        extra_responses=[
+            ResponseSpec(
+                Controller.error_model,
+                status_code=HTTPStatus.BAD_REQUEST,
+            ),
+        ],
+    )
+    def get(
+        self,
+        parsed_query: Query[CursorPageQuery],
+    ) -> CursorPaginated[UserSchema]:
+        """List users via cursor pagination."""
+        return self.resolve(UserListCursor)(parsed_query)
+
+    @override
+    def handle_error(
+        self,
+        endpoint: Endpoint,
+        controller: Controller[PydanticSerializer],
+        exc: Exception,
+    ) -> HttpResponse:
+        if isinstance(exc, InvalidCursorError):
+            return self.to_error(
+                self.format_error(
+                    str(exc),
+                    error_type=ErrorType.value_error,
+                ),
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
         return super().handle_error(endpoint, controller, exc)
 
 

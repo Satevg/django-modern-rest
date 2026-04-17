@@ -437,6 +437,7 @@ exclude = [
   "dmr/internal/django.py",
 ]
 strict = ["dmr/**/*", "typesafety/**/*"]
+extraPaths = ["django_test_app"]
 venvPath = "."
 venv = ".venv"
 
